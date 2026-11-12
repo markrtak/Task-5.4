@@ -10,6 +10,11 @@
     "dev": "concurrently -n server,client -c blue,magenta \"npm:dev --workspace server\" \"npm:dev --workspace client\"",
     "test": "jest"
   },
+  "config": {
+    "mongodbMemoryServer": {
+      "systemBinary": "C:\\Program Files\\MongoDB\\Server\\8.2\\bin\\mongod.exe"
+    }
+  },
   "devDependencies": {
     "@babel/core": "^7.26.0",
     "@babel/preset-env": "^7.26.0",

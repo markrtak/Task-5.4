@@ -6,6 +6,7 @@ import authRoutes from './routes/auth.js';
 import bookingRoutes from './routes/bookings.js';
 import userRoutes from './routes/users.js';
 import maintenanceRoutes from './routes/maintenance.js';
+import { csrfProtection, csrfTokenHandler } from './middleware/csrf.js';
 
 const app = express();
 
@@ -21,6 +22,12 @@ app.use(cookieParser());
 
 app.get('/api/health', (req, res) => res.json({ ok: true }));
 
+// Anti-CSRF: the client fetches a token here, then echoes it in the
+// `x-csrf-token` header on every state-changing request. Safe methods
+// (GET/HEAD/OPTIONS) and the pre-auth login/register routes are exempt.
+app.get('/api/csrf-token', csrfTokenHandler);
+app.use(csrfProtection);
+
 app.use('/api/auth', authRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/users', userRoutes);
@@ -33,8 +40,11 @@ app.use((req, res) => {
 
 // Error handler
 app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(err.status || 500).json({ message: err.message || 'Server Error' });
+  const status = err.status || 500;
+  if (status >= 500) console.error(err);
+  // `code` lets the client tell a CSRF rejection (EBADCSRFTOKEN) apart from
+  // other 403s, such as editing someone else's request.
+  res.status(status).json({ message: err.message || 'Server Error', ...(err.code && { code: err.code }) });
 });
 
 export default app;
